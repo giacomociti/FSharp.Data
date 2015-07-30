@@ -32,11 +32,14 @@ type public XsdProvider(cfg:TypeProviderConfig) as this =
       let resolutionFolder = args.[1] :?> string
       let includeMetadata = args.[2] :?> bool
       let failOnUnsupported = args.[3] :?>  bool
-      
-      let read (reader:TextReader) = 
-          let schema = XmlSchema.Read(reader,(fun o (e:ValidationEventArgs) -> failwith e.Message))
-          reader.Dispose()
-          schema
+
+      let read (reader: TextReader) = 
+        let schemaSet = new XmlSchemaSet()
+        use reader = reader
+        let schema = XmlSchema.Read(reader, null) |> schemaSet.Add 
+        //schemaSet.Compile()
+        schema
+
 
       let parseSingle _ (value: string) = 
           use sr = new StringReader(value)
@@ -90,7 +93,7 @@ type public XsdProvider(cfg:TypeProviderConfig) as this =
 
       let getTypes (schema : XmlSchema) =
         schema.SourceUri <- Path.Combine(resolutionFolder, "temp.xsd")
-        elements := [for e in schema.Elements do yield e:?>XmlSchemaElement]
+        elements := [for e in schema.Elements do if e:? XmlSchemaElement then yield e:?>XmlSchemaElement]
         schema |> XsdBuilder.generateType <| includeMetadata <| failOnUnsupported |> List.fold (StructuralInference.subtypeInfered (*allowNulls*)true) StructuralTypes.Top 
       
       let getTypesFromSchema (schema:XmlSchema) = 
