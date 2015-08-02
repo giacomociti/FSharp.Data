@@ -71,6 +71,8 @@
     <Compile Include="Xml\XmlInference.fs" />
     <Compile Include="Xml\XmlGenerator.fs" />
     <Compile Include="Xml\XmlProvider.fs" />
+    <Compile Include="Xsd\XsdInference.fs" />
+    <Compile Include="Xsd\XmlProviderFromSchema.fs" />
     <Compile Include="Xsd\XsdRuntime.fs" />
     <Compile Include="Xsd\XsdGenerator.fs" />
     <Compile Include="Xsd\XsdProvider.fs" />
