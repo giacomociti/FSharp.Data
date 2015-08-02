@@ -20,7 +20,7 @@ type public XmlProviderFromSchema(cfg:TypeProviderConfig) as this =
   // Generate namespace and type 'FSharp.Data.XmlProvider'
   let asm, version, replacer = AssemblyResolver.init cfg
   let ns = "FSharp.Data"
-  let xmlProvTy = ProvidedTypeDefinition(asm, ns, "Xsd2Provider", Some typeof<obj>)
+  let xmlProvTy = ProvidedTypeDefinition(asm, ns, "XmlProviderFromSchema", Some typeof<obj>)
 
   let buildTypes (typeName:string) (args:obj[]) =
 
