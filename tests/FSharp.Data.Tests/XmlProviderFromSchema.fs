@@ -147,6 +147,87 @@ let ``element with child choice``() =
   foo.Bar |> should equal (Some 5)
   foo.Baz |> should equal None
 
+type attrGroup = XmlProviderFromSchema<"""
+  <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+    elementFormDefault="qualified" attributeFormDefault="unqualified">
+	    <xs:attributeGroup name="myAttributes">
+		    <xs:attribute name="myNr" type="xs:int"/>
+		    <xs:attribute name="available" type="xs:boolean"/>
+	    </xs:attributeGroup>
+	    <xs:element name="foo">
+		    <xs:complexType>
+			    <xs:sequence>
+				    <xs:element name="bar" type="xs:string"/>
+			    </xs:sequence>
+			    <xs:attributeGroup ref="myAttributes"/>
+			    <xs:attribute name="lang" type="xs:language"/>
+		    </xs:complexType>
+	    </xs:element>
+  </xs:schema>""", ElementName = "foo">
+
+[<Test>]
+let ``element referencing attribute group``() =
+  let foo = attrGroup.Parse("""
+  <foo lang="en-US" myNr="42" available="false">
+	<bar>hello</bar>
+  </foo>""")
+  foo.Bar |> should equal "hello"
+  foo.Lang |> should equal (Some "en-US")
+  foo.MyNr |> should equal (Some 42)
+  foo.Available |> should equal (Some false)
+  
+
+
+
+type substGroup = XmlProviderFromSchema<"""
+  <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+    elementFormDefault="qualified" attributeFormDefault="unqualified">
+        <xs:element name="name" type="xs:string"/>
+        <xs:element name="navn" substitutionGroup="name"/>
+        <xs:complexType name="custinfo">
+          <xs:sequence>
+            <xs:element ref="name"/>
+          </xs:sequence>
+        </xs:complexType>
+        <xs:element name="customer" type="custinfo"/>
+        <xs:element name="kunde" substitutionGroup="customer"/>
+  </xs:schema>""", ElementName = "kunde">
+
+[<Test>]
+let ``substitution groups``() =
+  let foo = substGroup.Parse("""<kunde><name>hello</name></kunde>""")
+  foo.Name |> should equal "hello" 
+
+  // substitution groups are difficult to handle properly
+  let foo = substGroup.Parse("""<kunde><navn>hello</navn></kunde>""")
+  let failed = 
+    try
+      foo.Name |> ignore
+      false
+    with e ->
+        true
+  failed |> should equal true
+
+  
+
+
+
+// uncommenting this we have squiggles with message "Recursive schemas are not supported yet."
+//type recursiveSchema = XmlProviderFromSchema<"""
+//  <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+//    elementFormDefault="qualified" attributeFormDefault="unqualified">
+//	    <xs:complexType name="TextType" mixed="true">
+//		    <xs:choice minOccurs="0" maxOccurs="unbounded">
+//			    <xs:element ref="bold"/>
+//			    <xs:element ref="italic"/>
+//			    <xs:element ref="underline"/>
+//		    </xs:choice>
+//	    </xs:complexType>
+//	    <xs:element name="bold" type="TextType"/>
+//	    <xs:element name="italic" type="TextType"/>
+//	    <xs:element name="underline" type="TextType"/>
+//  </xs:schema>""", ElementName = "bold">
+
 
 
 

@@ -33,8 +33,31 @@ module XsdParsing =
 
     let inline ofType<'a> sequence = System.Linq.Enumerable.OfType<'a> sequence
 
+    let hasCycles x = 
+        let items = System.Collections.Generic.HashSet<XmlSchemaObject>()
+        let rec closure (obj: XmlSchemaObject) =
+            let nav innerObj =
+                if items.Add innerObj then closure innerObj
+            match obj with
+            | :? XmlSchemaElement as e -> 
+                nav e.ElementSchemaType 
+            | :? XmlSchemaComplexType as c -> 
+                nav c.ContentTypeParticle
+            | :? XmlSchemaGroupRef as r -> 
+                nav r.Particle
+            | :? XmlSchemaGroupBase as x -> 
+                x.Items 
+                |> ofType<XmlSchemaObject> 
+                |> Seq.iter nav
+            | _ -> ()
+        closure x
+        items.Contains x
+
+
     let rec parseElement (elm: XmlSchemaElement) =  
         
+        if hasCycles elm then failwith "Recursive schemas are not supported yet."
+
         let rec parseParticle (par: XmlSchemaParticle) =
 
             let occurs = par.MinOccurs, par.MaxOccurs
