@@ -1,8 +1,24 @@
-﻿namespace ProviderImplementation
+﻿// --------------------------------------------------------------------------------------
+// Implements XML type inference from XSD
+// --------------------------------------------------------------------------------------
+
+// The XML Provider infers a type from sample documents. An instance of InferedType 
+// represents a class of elements having a structure compatible with the given samples.
+// When a schema is availbale we can use it to derive an InferedType representing
+// valid elements according to an element definition in the given schema.
+// The InferedType derived from a schema should be essentialy the same as one
+// infered from a significant set of valid samples.
+// This is an easy way to support some XSD leveraging the existing functionalities.
+// The implementation uses a simplfied XSD model to split the task of deriving an InferedType:
+// - element definitions in xsd files map to this simplified xsd model
+// - instances of this xsd model map to InferedType.
+
+namespace ProviderImplementation
 
 open System.Xml
 open System.Xml.Schema
 
+/// Simplified model to represent schemas (XSD).
 module XsdModel =
 
     type XsdElement = { Name: XmlQualifiedName; Type: XsdType; IsNillable: bool }
@@ -26,16 +42,20 @@ module XsdModel =
         | Choice   of Occurs * XsdParticle list
         | Sequence of Occurs * XsdParticle list
 
+/// A simplified schema model is built from xsd. 
+/// The actual parsing is done using BCL classes.
 module XsdParsing =
 
+    /// A custom XmlResolver is needed for included files because we get the contents of the main file 
+    /// directly as a string from the FSharp.Data infrastructure. Hence the default XmlResolver is not
+    /// able to find the location of included schema files.
     type ResolutionFolderResolver(resolutionFolder) =
         inherit XmlUrlResolver()
         override _this.ResolveUri(_, relativeUri) = 
             System.Uri(System.IO.Path.Combine(resolutionFolder, relativeUri))
 
     
-    open XsdModel    
-    open Microsoft.FSharp.Core
+    open XsdModel
 
     let inline ofType<'a> sequence = System.Linq.Enumerable.OfType<'a> sequence
 
@@ -61,7 +81,7 @@ module XsdParsing =
 
 
     let rec parseElement (elm: XmlSchemaElement) =  
-        
+
         if hasCycles elm then failwith "Recursive schemas are not supported yet."
 
         let rec parseParticle (par: XmlSchemaParticle) =
@@ -115,7 +135,7 @@ module XsdParsing =
 
 
     let parseSchema resolutionFolder xsdText =
-        let schemaSet = new XmlSchemaSet()
+        let schemaSet = XmlSchemaSet()
         if resolutionFolder <> "" then
             schemaSet.XmlResolver <- ResolutionFolderResolver(resolutionFolder)
         use reader = new XmlTextReader(new System.IO.StringReader(xsdText))
@@ -136,7 +156,7 @@ module XsdParsing =
             | Some e -> e
 
 
-
+/// Element definitions in a schema are mapped to InferedType instances
 module XsdInference =
     open XsdModel
     open FSharp.Data.Runtime.StructuralTypes
@@ -149,9 +169,12 @@ module XsdInference =
     let getType = function
         | XmlTypeCode.Int -> typeof<int>
         | XmlTypeCode.Date -> typeof<System.DateTime>
+        | XmlTypeCode.DateTime -> typeof<System.DateTime>
         | XmlTypeCode.Boolean -> typeof<bool>
         | XmlTypeCode.Decimal -> typeof<decimal>
-        // etc..
+        | XmlTypeCode.Double -> typeof<double>
+        | XmlTypeCode.Float -> typeof<single>
+        // fallback to string
         | _ -> typeof<string>
 
     let rec inferElement elm =
