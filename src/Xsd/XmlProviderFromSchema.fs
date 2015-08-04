@@ -33,7 +33,7 @@ type public XmlProviderFromSchema(cfg:TypeProviderConfig) as this =
     let resolutionFolder = args.[3] :?> string
     let resource = args.[4] :?> string
     
-    let parseSingle _ value = XsdParsing.createSchemaSetFromText value
+    let parseSingle _ value = XsdParsing.parseSchema resolutionFolder value
     let parseList _ _ = failwith "unexpected call to parseList"
         
     let getSpecFromFromSchema schemaSet = 

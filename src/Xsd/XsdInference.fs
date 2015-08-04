@@ -27,6 +27,12 @@ module XsdModel =
         | Sequence of Occurs * XsdParticle list
 
 module XsdParsing =
+
+    type ResolutionFolderResolver(resolutionFolder) =
+        inherit XmlUrlResolver()
+        override _this.ResolveUri(_, relativeUri) = 
+            System.Uri(System.IO.Path.Combine(resolutionFolder, relativeUri))
+
     
     open XsdModel    
     open Microsoft.FSharp.Core
@@ -107,21 +113,16 @@ module XsdParsing =
             | x -> failwithf "unknown ElementSchemaType: %A" x
           IsNillable = elm.IsNillable }
 
-    let createSchemaSet (xmlReader: XmlReader) =
+
+    let parseSchema resolutionFolder xsdText =
         let schemaSet = new XmlSchemaSet()
-        use reader = xmlReader
+        if resolutionFolder <> "" then
+            schemaSet.XmlResolver <- ResolutionFolderResolver(resolutionFolder)
+        use reader = new XmlTextReader(new System.IO.StringReader(xsdText))
         XmlSchema.Read(reader, null) |> schemaSet.Add |> ignore
         schemaSet.Compile()
         schemaSet
 
-    let createSchemaSetFromText xsdText = 
-        new XmlTextReader(new System.IO.StringReader(xsdText))
-        |> createSchemaSet
-
-    let createSchemaSetFromUri schemaUri =
-        XmlReader.Create(inputUri = schemaUri, settings = XmlReaderSettings())
-        |> createSchemaSet
-    
 
     let getElement elmName elmNs (schema: XmlSchemaSet) =
         schema.GlobalElements.Values 
@@ -134,16 +135,6 @@ module XsdParsing =
             | None -> failwithf "No element found with name '%s' and namespace '%s'." elmName elmNs
             | Some e -> e
 
-
-    let getElement' xsdText elmName elmNs =
-        xsdText 
-        |> createSchemaSetFromText
-        |> fun x -> x.GlobalElements.Values
-        |> ofType<XmlSchemaElement>
-        |> Seq.find (fun x -> 
-            x.QualifiedName.Name = elmName && 
-            x.QualifiedName.Namespace = elmNs)
-        |> parseElement
 
 
 module XsdInference =
