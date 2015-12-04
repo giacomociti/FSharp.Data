@@ -72,24 +72,24 @@ let ``element with attributes and simple content``() =
     foo.Baz |> should equal (Some 2)
 
 
-type untypedElement = XmlProviderFromSchema<"""
-  <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
-    elementFormDefault="qualified" attributeFormDefault="unqualified">
-      <xs:element name="foo" />
-  </xs:schema>""", ElementName = "foo">
-
-[<Test>]
-let ``untyped element may contain anything``() =
-  let foo = untypedElement.Parse("""
-  <foo>
-    <anything />
-    <greetings>hi</greetings>
-  </foo>""")
-  foo.AnyElements
-  |> Array.iter (printfn "%A")
-  // not working as expected
-  //foo.AnyElements.[0].XElement.Name.LocalName |> should equal "anything"
-  //foo.AnyElements.[1].XElement.Name.LocalName |> should equal "greetings"
+//type untypedElement = XmlProviderFromSchema<"""
+//  <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+//    elementFormDefault="qualified" attributeFormDefault="unqualified">
+//      <xs:element name="foo" />
+//  </xs:schema>""", ElementName = "foo">
+//
+//[<Test>]
+//let ``untyped element may contain anything``() =
+//  let foo = untypedElement.Parse("""
+//  <foo>
+//    <anything />
+//    <greetings>hi</greetings>
+//  </foo>""")
+//  foo.AnyElements
+//  |> Array.iter (printfn "%A")
+//  // not working as expected
+//  //foo.AnyElements.[0].XElement.Name.LocalName |> should equal "anything"
+//  //foo.AnyElements.[1].XElement.Name.LocalName |> should equal "greetings"
 
   
 type elmWithChildSequence = XmlProviderFromSchema<"""
@@ -179,34 +179,34 @@ let ``element referencing attribute group``() =
 
 
 
-type substGroup = XmlProviderFromSchema<"""
-  <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
-    elementFormDefault="qualified" attributeFormDefault="unqualified">
-        <xs:element name="name" type="xs:string"/>
-        <xs:element name="navn" substitutionGroup="name"/>
-        <xs:complexType name="custinfo">
-          <xs:sequence>
-            <xs:element ref="name"/>
-          </xs:sequence>
-        </xs:complexType>
-        <xs:element name="customer" type="custinfo"/>
-        <xs:element name="kunde" substitutionGroup="customer"/>
-  </xs:schema>""", ElementName = "kunde">
-
-[<Test>]
-let ``substitution groups``() =
-  let foo = substGroup.Parse("""<kunde><name>hello</name></kunde>""")
-  foo.Name |> should equal "hello" 
-
-  // substitution groups are difficult to handle properly
-  let foo = substGroup.Parse("""<kunde><navn>hello</navn></kunde>""")
-  let failed = 
-    try
-      foo.Name |> ignore
-      false
-    with e ->
-        true
-  failed |> should equal true
+//type substGroup = XmlProviderFromSchema<"""
+//  <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+//    elementFormDefault="qualified" attributeFormDefault="unqualified">
+//        <xs:element name="name" type="xs:string"/>
+//        <xs:element name="navn" substitutionGroup="name"/>
+//        <xs:complexType name="custinfo">
+//          <xs:sequence>
+//            <xs:element ref="name"/>
+//          </xs:sequence>
+//        </xs:complexType>
+//        <xs:element name="customer" type="custinfo"/>
+//        <xs:element name="kunde" substitutionGroup="customer"/>
+//  </xs:schema>""", ElementName = "kunde">
+//
+//[<Test>]
+//let ``substitution groups``() =
+//  let foo = substGroup.Parse("""<kunde><name>hello</name></kunde>""")
+//  foo.Name |> should equal "hello" 
+//
+//  // substitution groups are difficult to handle properly
+//  let foo = substGroup.Parse("""<kunde><navn>hello</navn></kunde>""")
+//  let failed = 
+//    try
+//      foo.Name |> ignore
+//      false
+//    with e ->
+//        true
+//  failed |> should equal true
 
   
 
