@@ -2,7 +2,7 @@
 
 The F# Data library (`FSharp.Data.dll`) implements everything you need to access data in your F# applications 
 and scripts. It implements F# type providers for working with structured file formats (CSV, HTML, JSON and XML) and 
-for accessing the WorldBank and Freebase services. It also includes helpers for parsing CSV, HTML and JSON files and for sending HTTP requests.
+for accessing the WorldBank data. It also includes helpers for parsing CSV, HTML and JSON files and for sending HTTP requests.
 
 We're open to contributions from anyone. If you want to help out but don't know where to start, you can take one of the [Up-For-Grabs](https://github.com/fsharp/FSharp.Data/issues?labels=up-for-grabs&state=open) issues, or help to improve the [documentation][3].
 
@@ -10,11 +10,10 @@ You can see the version history [here](RELEASE_NOTES.md).
 
 ## Building
 
-- Simply build FSharp.Data.sln in Visual Studio 2013, Mono Develop, or Xamarin Studio. You can also use the FAKE script:
+- Simply build FSharp.Data.sln in Visual Studio 2013, Visual Studio 2015, Mono Develop, or Xamarin Studio. You can also use the FAKE script:
 
   * Windows: Run *build.cmd* 
     * [![AppVeyor build status](https://ci.appveyor.com/api/projects/status/vlw9avsb91rjfy39)](https://ci.appveyor.com/project/ovatsus/fsharp-data)
-    * [![TeamCity build status](http://teamcity.codebetter.com/app/rest/builds/buildType:\(id:bt1184\)/statusIcon)](http://teamcity.codebetter.com/viewType.html?buildTypeId=bt1184)
   * Mono: Run *build.sh*
     * [![Travis build status](https://travis-ci.org/fsharp/FSharp.Data.png)](https://travis-ci.org/fsharp/FSharp.Data)
 

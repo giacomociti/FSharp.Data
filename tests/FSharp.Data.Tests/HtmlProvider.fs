@@ -1,6 +1,6 @@
 ﻿#if INTERACTIVE
 #r "../../bin/FSharp.Data.dll"
-#r "../../packages/NUnit.2.6.3/lib/nunit.framework.dll"
+#r "../../packages/NUnit/lib/nunit.framework.dll"
 #r "System.Xml.Linq.dll"
 #load "../Common/FsUnit.fs"
 #else
@@ -289,3 +289,31 @@ let ``Can handle a table with headers directly inside thead``() =
     match table.Headers with
     | None -> failwith "No headers found"
     | Some headers -> headers |> should equal [ "Month"; "Savings" ]
+
+[<Test>]
+let ``Handles closing tag with number in script (Bug 800)``() =
+    let html = HtmlProvider<"""
+            <html>
+                <head>
+                    <title>Title</title>
+                </head>
+                <body>
+                    <a href="www.google.com">0</a>
+                    <script type="text/javascript">
+                        var a = '</1>'
+                    </script>
+                    <a href="www.google.com">1</a>
+                    <a href="www.google.com">2</a>
+                    <a href="www.google.com">3</a>
+                </body>
+            </html>""">.GetSample()
+    let data = html.Html.Descendants ["a"] |> Seq.toList
+    data.Length |> should equal 4
+
+type DoctorWho = FSharp.Data.HtmlProvider<"data/doctor_who2.html">
+
+[<Test>]   
+let ``List and Table with same nome don't clash``() =
+    DoctorWho().Lists.``Reference websites``.Values.[0] |> should equal "Doctor Who on TARDIS Data Core, an external wiki"
+    DoctorWho().Tables.``Reference websites``.Rows.[0].Awards |> should equal "Preceded by The Bill"
+

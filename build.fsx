@@ -24,16 +24,17 @@ let (!!) includes = (!! includes).SetBaseDirectory __SOURCE_DIRECTORY__
 // --------------------------------------------------------------------------------------
 
 let project = "FSharp.Data"
-let authors = ["Tomas Petricek"; "Gustavo Guerra"]
+let authors = ["Tomas Petricek"; "Gustavo Guerra"; "Colin Bull"]
 let summary = "Library of F# type providers and data access tools"
 let description = """
   The F# Data library (FSharp.Data.dll) implements everything you need to access data
   in your F# applications and scripts. It implements F# type providers for working with
-  structured file formats (CSV, HTML, JSON and XML) and for accessing the WorldBank and Freebase
-  data. It also includes helpers for parsing CSV, HTML and JSON files and for sending HTTP requests."""
-let tags = "F# fsharp data typeprovider WorldBank Freebase CSV HTML JSON XML HTTP"
+  structured file formats (CSV, HTML, JSON and XML) and for accessing the WorldBank data.
+  It also includes helpers for parsing CSV, HTML and JSON files and for sending HTTP requests."""
+let tags = "F# fsharp data typeprovider WorldBank CSV HTML JSON XML HTTP"
 
-let gitHome = "https://github.com/fsharp"
+let gitOwner = "fsharp"
+let gitHome = "https://github.com/" + gitOwner
 let gitName = "FSharp.Data"
 let gitRaw = environVarOrDefault "gitRaw" "https://raw.github.com/fsharp"
 
@@ -87,8 +88,6 @@ let internetCacheFolder = Environment.GetFolderPath(Environment.SpecialFolder.In
 
 Target "CleanInternetCaches" <| fun () ->
     CleanDirs [internetCacheFolder @@ "DesignTimeURIs"
-               internetCacheFolder @@ "FreebaseSchema"
-               internetCacheFolder @@ "FreebaseRuntime"
                internetCacheFolder @@ "WorldBankSchema"
                internetCacheFolder @@ "WorldBankRuntime"]
 
@@ -130,7 +129,7 @@ let runTestTask name =
             { p with
                 DisableShadowCopy = true
                 TimeOut = TimeSpan.FromMinutes 20.
-                Framework = "4.0"
+                Framework = "4.5"
                 Domain = MultipleDomainModel
                 OutputFile = "TestResults.xml" })
     taskName ==> "RunTests" |> ignore
@@ -155,15 +154,11 @@ Target "SourceLink" <| id
 open SourceLink
 
 Target "SourceLink" <| fun () ->
-    use repo = new GitRepo(__SOURCE_DIRECTORY__)
     for file in !! "src/*.fsproj" do
-        let proj = VsProj.LoadRelease file
-        logfn "source linking %s" proj.OutputFilePdb
-        let files = proj.Compiles -- "**/AssemblyInfo*.fs" 
-        repo.VerifyChecksums files
-        proj.VerifyPdbChecksums files
-        proj.CreateSrcSrv (sprintf "%s/%s/{0}/%%var2%%" gitRaw gitName) repo.Revision (repo.Paths files)
-        Pdbstr.exec proj.OutputFilePdb proj.OutputFilePdbSrcSrv
+        let proj = VsProj.Load file ["Configuration","Release"; "VisualStudioVersion","12.0"]
+        let files = SetBaseDir __SOURCE_DIRECTORY__ proj.Compiles -- "**/paket-files/**"
+        let url = sprintf "%s/%s/{0}/%%var2%%" gitRaw gitName
+        SourceLink.Index files proj.OutputFilePdb __SOURCE_DIRECTORY__ url
     CopyFiles "bin" (!! "src/bin/Release/FSharp.Data.*")
     CopyFiles "bin/portable7" (!! "src/bin/portable7/Release/FSharp.Data.*")
     CopyFiles "bin/portable7" (!! "src/bin/Release/FSharp.Data.DesignTime.*")
@@ -212,10 +207,55 @@ let publishFiles what branch fromFolder toFolder =
     Commit tempFolder <| sprintf "Update %s for version %s" what release.NugetVersion
     Branches.push tempFolder
 
+#load "paket-files/fsharp/FAKE/modules/Octokit/Octokit.fsx"
+open Octokit
+
+let createRelease() =
+
+    // Set release date in release notes
+    let releaseNotes = File.ReadAllText "RELEASE_NOTES.md" 
+    let releaseNotes = releaseNotes.Replace("#### " + release.NugetVersion + " - Unreleased", "#### " + release.NugetVersion + " - " + DateTime.Now.ToString("MMMM d yyyy"))
+    File.WriteAllText("RELEASE_NOTES.md", releaseNotes)
+
+    // Commit assembly info and RELEASE_NOTES.md
+    StageAll ""
+    Git.Commit.Commit "" (sprintf "Bump version to %s" release.NugetVersion)
+    Branches.pushBranch "" "upstream" "master"
+
+    // Create tag
+    Branches.tag "" release.NugetVersion
+    Branches.pushTag "" "upstream" release.NugetVersion
+
+    // Create github release
+    let user = getBuildParamOrDefault "github-user" ""
+    let pw = getBuildParamOrDefault "github-pw" ""
+
+    let user = 
+        if user = "" then 
+            printf "username: "
+            Console.ReadLine()
+        else 
+            user
+    let pw = 
+        if pw = "" then 
+            printf "password: "
+            Console.ReadLine()
+        else 
+            pw
+
+    let draft =
+        createClient user pw
+        |> createDraft gitOwner gitName release.NugetVersion (release.SemVer.PreRelease <> None) release.Notes 
+   
+    draft
+    |> releaseDraft
+    |> Async.RunSynchronously
+
 Target "ReleaseDocs" <| fun () ->
     publishFiles "generated documentation" "gh-pages" "docs/output" "" 
 
 Target "ReleaseBinaries" <| fun () ->
+    createRelease() 
     publishFiles "binaries" "release" "bin" "bin" 
 
 Target "Release" DoNothing
@@ -263,5 +303,10 @@ Target "All" DoNothing
 "BuildConsoleTests" ==> "All"
 "RunTests" ==> "All"
 "RunConsoleTests" ==> "All"
+
+Target "BuildAndRunTests" DoNothing
+
+"BuildTests" ==> "BuildAndRunTests"
+"RunTests" ==> "BuildAndRunTests"
 
 RunTargetOrDefault "Help"

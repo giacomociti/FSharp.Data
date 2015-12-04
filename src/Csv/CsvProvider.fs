@@ -92,18 +92,26 @@ type public CsvProvider(cfg:TypeProviderConfig) as this =
         let body = csvErasedType?CreateEmpty () (Expr.Var rowToStringArrayVar, paramValue, replacer.ToRuntime headers,  sampleCsv.NumberOfColumns, separators, quote)
         Expr.Let(rowToStringArrayVar, rowToStringArray, body)))
       csvType.AddMember(ctor) 
-       
+
+      let parseRows = ProvidedMethod("ParseRows", [ProvidedParameter("text", typeof<string>)], rowType.MakeArrayType(), IsStaticMethod = true)
+      parseRows.InvokeCode <- fun (Singleton text) ->         
+        let body = csvErasedType?ParseRows () (text, Expr.Var stringArrayToRowVar, separators, quote, ignoreErrors)
+        Expr.Let(stringArrayToRowVar, stringArrayToRow, body)
+      csvType.AddMember parseRows
+
       { GeneratedType = csvType
         RepresentationType = csvType
         CreateFromTextReader = fun reader ->
           let body = 
             csvErasedType?Create () (Expr.Var stringArrayToRowVar, Expr.Var rowToStringArrayVar, replacer.ToRuntime reader, 
-                                              separators, quote, hasHeaders, ignoreErrors, skipRows, cacheRows)
+                                     separators, quote, hasHeaders, ignoreErrors, skipRows, cacheRows)
           Expr.Let(stringArrayToRowVar, stringArrayToRow, Expr.Let(rowToStringArrayVar, rowToStringArray, body))
         CreateFromTextReaderForSampleList = fun _ -> failwith "Not Applicable" }
 
+    let maxNumberOfRows = if inferRows > 0 then Some inferRows else None
+
     generateType "CSV" sample (*sampleIsList*)false parse (fun _ _ -> failwith "Not Applicable")
-                 getSpecFromSamples version this cfg replacer encodingStr resolutionFolder resource typeName
+                 getSpecFromSamples version this cfg replacer encodingStr resolutionFolder resource typeName maxNumberOfRows
 
   // Add static parameter that specifies the API we want to get (compile-time) 
   let parameters = 
