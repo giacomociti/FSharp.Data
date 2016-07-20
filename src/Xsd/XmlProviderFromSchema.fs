@@ -58,12 +58,12 @@ type public XmlProviderFromSchema(cfg:TypeProviderConfig) as this =
           result.Converter <@@ XmlElement.CreateList(%reader) @@> }
 
     generateType "XSD" schema false parseSingle parseList getSpecFromFromSchema 
-                 version this cfg replacer "" resolutionFolder resource typeName
+                 version this cfg replacer "" resolutionFolder resource typeName None
 
   // Add static parameter that specifies the API we want to get (compile-time) 
   let parameters = 
     [ ProvidedStaticParameter("Schema", typeof<string>)
-      ProvidedStaticParameter("ElementName", typeof<string>)
+      ProvidedStaticParameter("ElementName", typeof<string>, parameterDefaultValue = "")
       ProvidedStaticParameter("ElementNamespace", typeof<string>, parameterDefaultValue = "")
       ProvidedStaticParameter("ResolutionFolder", typeof<string>, parameterDefaultValue = "")
       ProvidedStaticParameter("EmbeddedResource", typeof<string>, parameterDefaultValue = "") ]

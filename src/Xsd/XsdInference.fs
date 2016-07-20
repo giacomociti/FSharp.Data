@@ -111,7 +111,7 @@ module XsdParsing =
                 | XmlSchemaContentType.Empty 
                 | XmlSchemaContentType.ElementOnly -> 
                     x.ContentTypeParticle |> parseParticle |> ComplexContent
-                | _ -> failwith "Unknown content type: %A." x.ContentType
+                | _ -> failwithf "Unknown content type: %A." x.ContentType
 
           IsMixed = x.IsMixed }
 
@@ -143,8 +143,8 @@ module XsdParsing =
 
     let parseSchema resolutionFolder xsdText =
         let schemaSet = XmlSchemaSet()
-//        if resolutionFolder <> "" then
-//            schemaSet.XmlResolver <- ResolutionFolderResolver(resolutionFolder)
+        if resolutionFolder <> "" then
+            schemaSet.XmlResolver <- ResolutionFolderResolver(resolutionFolder)
         use reader = new XmlTextReader(new System.IO.StringReader(xsdText))
         XmlSchema.Read(reader, null) |> schemaSet.Add |> ignore
         schemaSet.Compile()
@@ -152,15 +152,23 @@ module XsdParsing =
 
 
     let getElement elmName elmNs (schema: XmlSchemaSet) =
-        schema.GlobalElements.Values 
-        |> ofType<XmlSchemaElement>
-        |> Seq.tryFind (fun x -> 
-            x.QualifiedName.Name = elmName && 
-            x.QualifiedName.Namespace = elmNs)
-        |> Option.map parseElement
-        |> function 
-            | None -> failwithf "No element found with name '%s' and namespace '%s'." elmName elmNs
-            | Some e -> e
+        let elms = schema.GlobalElements.Values |> ofType<XmlSchemaElement>
+        let names = elms |> Seq.map (fun x -> x.QualifiedName) |> List.ofSeq
+        match elmName, Seq.length elms with
+        | _ , 0 -> failwith "There are no global elements in the schema"
+        | "", 1 -> parseElement (Seq.exactlyOne elms)
+        | "", _ -> 
+            //parseElement (Seq.head elms)
+            failwithf "Element name must be specified because there are multiple global elements: %A." names
+        | _ ->
+            elms
+            |> Seq.tryFind (fun x -> 
+                x.QualifiedName.Name = elmName && 
+                x.QualifiedName.Namespace = elmNs)
+            |> Option.map parseElement
+            |> function 
+                | None -> failwithf "No element found with name '%s' and namespace '%s'. Available elements: %A." elmName elmNs names
+                | Some e -> e
 
 
 /// Element definitions in a schema are mapped to InferedType instances

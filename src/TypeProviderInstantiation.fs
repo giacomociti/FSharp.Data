@@ -34,11 +34,18 @@ type XmlProviderArgs =
       EmbeddedResource : string 
       InferTypesFromValues : bool }
 
+
 type XsdProviderArgs = 
-    { SchemaFile : string
+    { Schema : string
+      ElementName: string
+      ElementNamespace: string
       ResolutionFolder : string
-      IncludeMetadata : bool
-      FailOnUnsupported : bool }
+      Resource : string }
+//type XsdProviderArgs = 
+//    { SchemaFile : string
+//      ResolutionFolder : string
+//      IncludeMetadata : bool
+//      FailOnUnsupported : bool }
 
 type JsonProviderArgs = 
     { Sample : string
@@ -104,11 +111,12 @@ type TypeProviderInstantiation =
                    box x.EmbeddedResource
                    box x.InferTypesFromValues |] 
             | Xsd x ->
-                (fun cfg -> new XsdProvider(cfg) :> TypeProviderForNamespaces),
-                [| box x.SchemaFile
+                (fun cfg -> new XmlProviderFromSchema(cfg) :> TypeProviderForNamespaces),
+                [| box x.Schema
+                   box x.ElementName
+                   box x.ElementNamespace
                    box x.ResolutionFolder
-                   box x.IncludeMetadata
-                   box x.FailOnUnsupported |] 
+                   box x.Resource |] 
             | Json x -> 
                 (fun cfg -> new JsonProvider(cfg) :> TypeProviderForNamespaces),
                 [| box x.Sample
@@ -157,9 +165,10 @@ type TypeProviderInstantiation =
              x.InferTypesFromValues.ToString() ]
         | Xsd x -> 
             ["Xsd"
-             x.SchemaFile
-             x.IncludeMetadata.ToString()
-             x.FailOnUnsupported.ToString()]
+             x.Schema
+             x.ElementName
+             x.ElementNamespace
+             x.ResolutionFolder ]
         | Json x -> 
             ["Json"
              x.Sample
@@ -224,10 +233,11 @@ type TypeProviderInstantiation =
                   EmbeddedResource = "" 
                   InferTypesFromValues = args.[5] |> bool.Parse }
         | "Xsd" ->
-            Xsd { SchemaFile = args.[1]
+            Xsd { Schema = args.[0]
+                  ElementName = args.[1]
+                  ElementNamespace = args.[2]
                   ResolutionFolder = ""
-                  IncludeMetadata = true
-                  FailOnUnsupported = false } 
+                  Resource = "" } 
         | "Json" ->
             Json { Sample = args.[1]
                    SampleIsList = args.[2] |> bool.Parse

@@ -82,9 +82,6 @@
     <Compile Include="Xml\XmlProvider.fs" />
     <Compile Include="Xsd\XsdInference.fs" />
     <Compile Include="Xsd\XmlProviderFromSchema.fs" />
-    <Compile Include="Xsd\XsdRuntime.fs" />
-    <Compile Include="Xsd\XsdGenerator.fs" />
-    <Compile Include="Xsd\XsdProvider.fs" />
     <Compile Include="Csv\CsvRuntime.fs" />
     <Compile Include="Csv\CsvFile.fs" />
     <Compile Include="Csv\CsvExtensions.fs" />

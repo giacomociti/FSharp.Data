@@ -91,6 +91,11 @@ let ``element with attributes and simple content``() =
 //  //foo.AnyElements.[0].XElement.Name.LocalName |> should equal "anything"
 //  //foo.AnyElements.[1].XElement.Name.LocalName |> should equal "greetings"
 
+//type hr = XmlProviderFromSchema< """C:\temp\Schemas\hr-xml\HumanResource.xsd""", 
+//    //ElementName = "HumanResources", 
+//    //ElementNamespace = """http://ns.hr-xml.org/2007-04-15""",
+//    ResolutionFolder = """C:\temp\Schemas\hr-xml\""">
+
   
 type elmWithChildSequence = XmlProviderFromSchema<"""
   <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
