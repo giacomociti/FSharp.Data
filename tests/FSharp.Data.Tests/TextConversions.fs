@@ -55,5 +55,6 @@ let ``DateTimeOffset conversions`` () =
   "2018-04-25+10:00"            |> shouldBe (System.DateTimeOffset(2018, 4, 25, 0, 0, 0, System.TimeSpan.FromHours(10.)))
   "2018-04-25 23:04:00-06:30"   |> shouldBe (System.DateTimeOffset(2018, 4, 25, 23, 4, 0, System.TimeSpan.FromHours(-6.5)))
   "2018-04-25T00:00:00Z"        |> shouldBe (System.DateTimeOffset(2018, 4, 25, 0, 0, 0, System.TimeSpan.FromHours(0.)))
+  "2018-04-25T00:00:00"         |> shouldBe (System.DateTimeOffset(System.DateTime(2018, 4, 25, 0, 0, 0)))
   "garbage"                     |> shouldFail
 

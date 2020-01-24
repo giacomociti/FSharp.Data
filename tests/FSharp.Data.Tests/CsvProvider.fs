@@ -82,7 +82,7 @@ let ``Inference of numbers with empty values`` () =
   let i:Nullable<int> = row.Int
   let f5:float = row.Float5
   let f6:float = row.Float6
-  let d:option<DateTime> = row.Date
+  let d:option<DateTimeOffset> = row.Date
   
   let expected = 1.0, 1.0, 1.0, 1.0, Nullable<int>(), Double.NaN, Double.NaN, (None: DateTime option)
   let actual = row.Float1, row.Float2, row.Float3, row.Float4, row.Int, row.Float5, row.Float6, row.Date    

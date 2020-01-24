@@ -131,7 +131,9 @@ type TextConversions private() =
         match DateTimeOffset.TryParse(text, cultureInfo, dateTimeStyles) with
         | true, dto -> dto |> Some
         | false, _ -> None
-      | _ -> None
+      | _ ->
+        try System.Xml.XmlConvert.ToDateTimeOffset text |> Some
+        with _ -> None
 
   static member AsTimeSpan (cultureInfo: CultureInfo) (text:string) =
     match TimeSpan.TryParse(text, cultureInfo) with
